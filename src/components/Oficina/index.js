@@ -180,7 +180,7 @@ export default class WozxInvestor extends Component {
     var usuario =  await this.consultarUsuario(direccion, false);
     var range = "N/A";
     var prof = usuario.rango;
-
+    
     prof = prof.toFixed(2);
     prof = parseFloat(prof);
     //console.log(prof);
@@ -316,7 +316,7 @@ export default class WozxInvestor extends Component {
 
 
     withdrawnTrx = parseFloat(withdrawnTrx);
-    withdrawnTrx = withdrawnTrx.toFixed(4);
+    withdrawnTrx = withdrawnTrx.toFixed(2);
 
     investedWozx = parseFloat(investedWozx);
     investedWozx  = investedWozx.toFixed(4);

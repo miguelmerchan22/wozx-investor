@@ -1,16 +1,25 @@
 const express = require('express')
 const bodyParser = require("body-parser");
 const mongoose = require('mongoose');
-const TronWeb = require('tronweb');
+var TronWeb = require('tronweb');
 
 const app = express();
 const port = process.env.PORT || 3003;
 const token = process.env.APP_MT;
+const uri = process.env.APP_URI || "mongodb+srv://userwozx:wozx1234567890@ewozx.neief.mongodb.net/registro";
+const TRONGRID_API = process.env.APP_API || "https://api.shasta.trongrid.io";
+
+console.log(TRONGRID_API);
+
+TronWeb = new TronWeb(
+  TRONGRID_API,
+  TRONGRID_API,
+  TRONGRID_API
+);
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-const uri = 'mongodb+srv://userwozx:wozx1234567890@ewozx.neief.mongodb.net/registro';
 const options = { useNewUrlParser: true, useUnifiedTopology: true };
 
 mongoose.connect(uri, options).then(
@@ -90,6 +99,31 @@ app.get('/consultar/ejemplo', async(req,res) => {
 
 });
 
+app.get('/consultar/transaccion/:id', async(req,res) => {
+
+    let id = req.params.id;
+
+    await TronWeb.trx.getTransaction(id)
+    .then(value=>{
+      console.log(value.ret[0].contractRet);
+
+      if (value.ret[0].contractRet === 'SUCCESS') {
+
+        res.send({result: true});
+      }else {
+        res.send({result: false});
+      }
+    })
+    .catch(value=>{
+      console.log(value);
+      res.send({result: false});
+    })
+
+
+
+
+});
+
 app.get('/registrar/aplicacion', async(req,res) => {
 
     let cuenta = "ewozx";
@@ -147,6 +181,27 @@ app.get('/consultar/:direccion', async(req,res) => {
 
     if ( usuario == "" ) {
 
+        respuesta = {
+           direccion: 'N/A',
+           registered: false,
+           sponsor: 'N/A',
+           ethereum: 'N/A',
+           eth: false,
+           rango: 0,
+           recompensa: false,
+           nivel: [0,0,0,0,0,0,0,0,0,0],
+           balanceTrx: 0,
+           withdrawnTrx: 0,
+           investedWozx: 0,
+           withdrawnWozx: 0,
+           historial: [{
+               tiempo: Date.now(),
+               valor: 0,
+               moneda: 'N/A',
+               accion: 'N/A'
+
+           }]
+       }
 
         respuesta.status = "200";
         respuesta.txt = "Esta cuenta no está registrada";
@@ -172,9 +227,9 @@ app.post('/registrar/:direccion', async(req,res) => {
     if (await TronWeb.isAddress(cuenta) && token == token2) {
 
         if ( usuario != "" ) {
+            respuesta = usuario[0];
             respuesta.status = "303";
             respuesta.txt = "Cuenta ya registrada";
-            respuesta.usuario = usuario[0];
 
             res.send(respuesta);
 

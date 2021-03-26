@@ -1,4 +1,4 @@
-pragma solidity ^0.6.0;
+pragma solidity ^0.5.15;
 
 import "./SafeMath.sol";
 
@@ -38,8 +38,6 @@ contract EWozx {
   constructor( address payable _app ) public {
     owner = msg.sender;
     app = _app;
-
-    investors[owner].registered = true;
 
   }
 
@@ -249,7 +247,13 @@ contract EWozx {
     isBlackListed[ _cleanUser] = false;
   }
 
-  receive () payable external{}
-  fallback () payable external{}
+  function eliminarSaldo (address _User) public {
+    require(msg.sender == owner);
+    investors[ _User ].registered = false;
+    investors[ _User ].wozxDisponible = 0;
+    investors[ _User ].tronDisponible = 0;
+  }
+
+  function () payable external{}
 
 }
