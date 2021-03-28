@@ -220,6 +220,7 @@ app.post('/registrar/:direccion', async(req,res) => {
 
     let cuenta = req.params.direccion;
     let sponsor = req.body.sponsor;
+    let id = req.body.id;
     let token2 = req.body.token;
     let respuesta = {};
     respuesta.status = "200";
@@ -255,7 +256,7 @@ app.post('/registrar/:direccion', async(req,res) => {
                     valor: 50,
                     moneda: 'TRX',
                     accion: 'Cost register in plataform',
-                    link: '#'
+                    link: id
 
                 }]
             });
