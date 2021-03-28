@@ -1083,7 +1083,7 @@ export default class WozxInvestor extends Component {
     }else{
       this.setState({
         tipo:"button",
-        boton: "Enter a correct Wozx Wallet",
+        boton: "Enter a correct address",
         cosa: false
       });
 
@@ -1151,9 +1151,9 @@ export default class WozxInvestor extends Component {
           funcion:false,
           auth: "#alert",
           texto:"Register WOZX wallet",
-          texto2:'Enter your address to receive WOZX',
+          texto2:'Enter your Wozx Wallet to receive WOZX',
           value: direccionTRX,
-          boton: "Enter a correct Wozx Wallet",
+          boton: "Enter a correct address",
           walleteth: "Undefined address"
         });
 
