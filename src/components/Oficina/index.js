@@ -7,6 +7,8 @@ import cons from "../../cons.js";
 
 import ccxt from 'ccxt';
 
+const delay = ms => new Promise(res => setTimeout(res, ms));
+
 const exchange = new ccxt.bithumb({
     nonce () { return this.milliseconds () }
 });
@@ -31,8 +33,6 @@ export default class WozxInvestor extends Component {
       withdrawnTrx: "0",
       investedWozx: "0",
       withdrawnWozx: "0",
-      wozxPe: false,
-      wozxCa: 0,
       miPrecioWozx: 0,
       priceUSDWOZX: 0
 
@@ -48,6 +48,9 @@ export default class WozxInvestor extends Component {
     this.actualizarDireccion = this.actualizarDireccion.bind(this);
     this.actualizarUsuario = this.actualizarUsuario.bind(this);
 
+    this.consultarTransaccion = this.consultarTransaccion.bind(this);
+    this.syncBlockChain = this.syncBlockChain.bind(this);
+
   }
 
   async componentDidMount() {
@@ -58,6 +61,23 @@ export default class WozxInvestor extends Component {
     setInterval(() => this.Link(),3*1000);
     await this.Investors();
     setInterval(() => this.Investors(),10*1000);
+  };
+
+  async consultarTransaccion(id){
+
+    this.setState({
+      texto: "Updating balance..."
+    });
+    await delay(3000);
+    var proxyUrl = cons.proxy;
+    var apiUrl = cons.mongo+'consultar/transaccion/'+id;
+
+    const response = await fetch(proxyUrl+apiUrl)
+    .catch(error =>{console.error(error)});
+    const json = await response.json();
+
+    return json.result;
+
   };
 
   async consultarUsuario(direccionTRX, otro){
@@ -180,7 +200,7 @@ export default class WozxInvestor extends Component {
     var usuario =  await this.consultarUsuario(direccion, false);
     var range = "N/A";
     var prof = usuario.rango;
-    
+
     prof = prof.toFixed(2);
     prof = parseFloat(prof);
     //console.log(prof);
@@ -226,12 +246,42 @@ export default class WozxInvestor extends Component {
 
   };
 
+  async syncBlockChain(){
+    var account =  await window.tronWeb.trx.getAccount();
+    account = window.tronWeb.address.fromHex(account.address);
+    var informacionCuenta = await this.consultarUsuario(account,false);
+
+    console.log(informacionCuenta);
+
+    var investor = await Utils.contract.investors(account).call();
+
+    console.log(investor);
+
+    if ( investor.registered && informacionCuenta.registered ) {
+
+      investor.tronEntrante = parseInt(investor.tronEntrante._hex)/1000000;
+      investor.tronDisponible = parseInt(investor.tronDisponible._hex)/1000000;
+      investor.tronRetirado = parseInt(investor.tronRetirado._hex)/1000000;
+      investor.wozxEntrante = parseInt(investor.wozxEntrante._hex)/1000000;
+      investor.wozxDisponible = parseInt(investor.wozxDisponible._hex)/1000000;
+      investor.wozxRetirado = parseInt(investor.wozxRetirado._hex)/1000000;
+
+      informacionCuenta.balanceTrx = investor.tronDisponible;
+      informacionCuenta.investedWozx = investor.wozxDisponible;
+      informacionCuenta.withdrawnTrx = investor.tronEntrante-investor.tronDisponible;
+      informacionCuenta.withdrawnWozx = investor.wozxEntrante-investor.wozxDisponible;
+
+      await this.actualizarUsuario( informacionCuenta, null );
+    }
+  }
+
   async enviarWozx(){
 
     const {investedWozx} = this.state;
 
     let direccion = document.getElementById("enviartronwozx").value;
     var cantidad = document.getElementById("cantidadwozx").value;
+    cantidad = parseFloat(cantidad);
 
     var account =  await window.tronWeb.trx.getAccount();
     var accountAddress = account.address;
@@ -248,13 +298,13 @@ export default class WozxInvestor extends Component {
     }else{
 
 
-      if (cantidad <= 0 || cantidad === "" || cantidad > investedWozx) {
+      if (cantidad <= 0 || isNaN(cantidad) || cantidad > investedWozx || cantidad < cons.FEEW) {
         window.alert("Please enter a correct amount");
         document.getElementById("cantidadwozx").value = "";
 
       }else{
 
-        result = window.confirm("You are sure that you want to SEND "+cantidad+" Wozx?, remember that this action cannot be reversed");
+        result = window.confirm("You are sure that you want to SEND "+cantidad+" Wozx?, remember that this action cannot be reversed - fee: "+cons.FEEW);
 
       }
 
@@ -267,7 +317,11 @@ export default class WozxInvestor extends Component {
     var informacionCuenta = await this.consultarUsuario(accountAddress, true);
     var informacionDestino = await this.consultarUsuario(direccion, true);
 
-    if (result && await Utils.contract.enviarWozx(direccion, parseInt(cantidad*1000000)).send() && informacionCuenta.registered && informacionDestino.registered) {
+    var id = await Utils.contract.enviarWozx(direccion, parseInt(cantidad*1000000)).send();
+    await delay(3000);
+    var pago = await this.consultarTransaccion(id);
+
+    if (result && pago && informacionCuenta.registered && informacionDestino.registered) {
 
       informacionCuenta.investedWozx -= cantidad;
       informacionCuenta.withdrawnWozx += cantidad;
@@ -275,25 +329,24 @@ export default class WozxInvestor extends Component {
           tiempo: Date.now(),
           valor: cantidad,
           moneda: 'WOZX',
-          accion: 'Sed to: '+direccion
+          accion: 'Send to: '+direccion,
+          link: id
 
       })
 
-      var otro = accountAddress;
-      await this.actualizarUsuario( informacionCuenta, otro);
+      await this.actualizarUsuario( informacionCuenta, informacionCuenta.direccion);
 
-      informacionDestino.investedWozx += cantidad;
-      informacionDestino.withdrawnWozx -= cantidad;
+      informacionDestino.investedWozx += cantidad-cons.FEEW;
       informacionDestino.historial.push({
           tiempo: Date.now(),
           valor: cantidad,
           moneda: 'WOZX',
-          accion: 'Send From: '+accountAddress
+          accion: 'Received from: '+accountAddress,
+          link: id
 
       })
 
-      otro = direccion;
-      await this.actualizarUsuario( informacionDestino, otro);
+      await this.actualizarUsuario( informacionDestino, informacionDestino.direccion);
 
       document.getElementById("cantidadwozx").value = "";
 
@@ -303,16 +356,7 @@ export default class WozxInvestor extends Component {
 
 
   render() {
-    var {miPrecioWozx, wozxPe, wozxCa, refe, balanceTrx, withdrawnTrx, investedWozx,  withdrawnWozx , direccion, link, rango, ganancia} = this.state;
-
-
-
-
-    if ( wozxPe ) {
-      wozxPe ="(~ "+wozxCa+" WOZX)";
-    }else{
-      wozxPe ="";
-    }
+    var {miPrecioWozx, balanceTrx, withdrawnTrx, investedWozx,  withdrawnWozx } = this.state;
 
 
     withdrawnTrx = parseFloat(withdrawnTrx);
@@ -336,28 +380,28 @@ export default class WozxInvestor extends Component {
           My office:</span> <br></br>
           <span style={{'fontSize': '18px'}}>
 
-            {direccion} <br />
+            {this.state.direccion} <br />
             <span className="subhead">{investedWozx} WOZX =</span> $ {miPrecioWozx.toFixed(2)} USD <br />
-            <span className="subhead">Career range:</span><a href="/range.html"> {rango} </a> <br />
-            <span className="subhead">Profits:</span> $ {ganancia} USD
+            <span className="subhead">Career range:</span><a href="/range.html"> {this.state.rango} </a> <br />
+            <span className="subhead">Profits:</span> $ {this.state.ganancia} USD
 
           </span></h3><br />
           <ul className="stats-tabs">
-            <li><a href="#officer">{refe[0]} <em>Level 1</em></a></li>
-            <li><a href="#officer">{refe[1]} <em>Level 2</em></a></li>
-            <li><a href="#officer">{refe[2]} <em>Level 3</em></a></li>
-            <li><a href="#officer">{refe[3]} <em>Level 4</em></a></li>
-            <li><a href="#officer">{refe[4]} <em>Level 5</em></a></li>
-            <li><a href="#officer">{refe[5]} <em>Level 6</em></a></li>
-            <li><a href="#officer">{refe[6]} <em>Level 7</em></a></li>
-            <li><a href="#officer">{refe[7]} <em>Level 8</em></a></li>
-            <li><a href="#officer">{refe[8]} <em>Level 9</em></a></li>
-            <li><a href="#officer">{refe[9]} <em>Level 10</em></a></li>
+            <li><a href="#officer">{this.state.refe[0]} <em>Level 1</em></a></li>
+            <li><a href="#officer">{this.state.refe[1]} <em>Level 2</em></a></li>
+            <li><a href="#officer">{this.state.refe[2]} <em>Level 3</em></a></li>
+            <li><a href="#officer">{this.state.refe[3]} <em>Level 4</em></a></li>
+            <li><a href="#officer">{this.state.refe[4]} <em>Level 5</em></a></li>
+            <li><a href="#officer">{this.state.refe[5]} <em>Level 6</em></a></li>
+            <li><a href="#officer">{this.state.refe[6]} <em>Level 7</em></a></li>
+            <li><a href="#officer">{this.state.refe[7]} <em>Level 8</em></a></li>
+            <li><a href="#officer">{this.state.refe[8]} <em>Level 9</em></a></li>
+            <li><a href="#officer">{this.state.refe[9]} <em>Level 10</em></a></li>
           </ul>
 
           <h3 className="white" style={{'fontWeight': 'bold'}}>Referral link:</h3>
-          <h6 className="white" ><a href={link}>{link}</a>&nbsp;<br /><br />
-          <CopyToClipboard text={link}>
+          <h6 className="white" ><a href={this.state.link}>{this.state.link}</a>&nbsp;<br /><br />
+          <CopyToClipboard text={this.state.link}>
             <button type="button" className="btn btn-info">Copy to clipboard</button>
           </CopyToClipboard>
           </h6>
@@ -371,7 +415,6 @@ export default class WozxInvestor extends Component {
 
               <h1 className="subhead">Balance</h1>
               <h3 className="display-2--light">{investedWozx} WOZX</h3>
-              <h3 className="display-2--light">{wozxPe}</h3>
               <hr></hr>
 
           </div>
@@ -403,13 +446,20 @@ export default class WozxInvestor extends Component {
           </div>
 
         </div>
+
+        <div className="row centrartexto">
+          <div className="col-twelve">
+            <button type="button" className="btn btn-light" style={{'backgroundColor': 'green','color': 'white','borderBlockColor': 'green'}} onClick={() => this.syncBlockChain()}>Sync whit BlockChain</button><br />
+            <small id="syncHelp" className="form-text text-muted">Use it with caution, only when you have questions about your balance</small><br /><br />
+          </div>
+        </div>
         <div className="row centrartexto">
 
           <div className="col-seven">
 
               <h3 className="display-2--light"> Send WOZX to USER:</h3>
               <input type="text" className="form-control" id="enviartronwozx" aria-describedby="emailHelp" placeholder="Tron wallet Member" />
-              <small id="emailHelp" className="form-text text-muted">make sure the address is well written, once sent, this action cannot be reversed</small>
+              <small id="wozxHelp" className="form-text text-muted">Make sure the address is well written, once sent, this action cannot be reversed</small>
 
 
           </div>
@@ -418,7 +468,7 @@ export default class WozxInvestor extends Component {
 
               <h3 className="display-2--light" style={{cursor: "pointer"}} onClick={() => this.Wozx()}> Available {investedWozx} WOZX</h3>
               <input type="number" className="form-control" id="cantidadwozx" aria-describedby="emailHelp" placeholder="how much WOZX" />
-              <a className="btn btn-light"  href="#enviartronwozx" style={{'backgroundColor': 'red','color': 'white','borderBlockColor': 'red'}} onClick={() => this.enviarWozx()}>send WOZX</a>
+              <button type="button" className="btn btn-light" style={{'backgroundColor': 'red','color': 'white','borderBlockColor': 'red'}} onClick={() => this.enviarWozx()}>send WOZX</button>
 
           </div>
 
