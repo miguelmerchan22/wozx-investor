@@ -18,14 +18,14 @@ exchange.apiKey = cons.AK;
 exchange.secret = cons.SK;
 
 
-export default class WozxInvestor extends Component {
+export default class Oficina extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
       rango: "N/A",
       ganancia: 0,
-      refe: [],
+      refe: [[],[],[],[],[],[],[],[],[],[]],
       direccion: "",
       link: "Make an investment to get the referral LINK",
       registered: false,
@@ -60,7 +60,7 @@ export default class WozxInvestor extends Component {
     await this.Link();
     setInterval(() => this.Link(),3*1000);
     await this.Investors();
-    setInterval(() => this.Investors(),10*1000);
+    setInterval(() => this.Investors(),3*1000);
   };
 
   async consultarTransaccion(id){
@@ -142,19 +142,16 @@ export default class WozxInvestor extends Component {
 
   async rateW(){
     var proxyUrl = cons.proxy;
-    var apiUrl = 'https://api.coingecko.com/api/v3/coins/wozx';
-    fetch(proxyUrl+apiUrl).then(response => {
-      return response.json();
-    }).then(data => {
-      // Work with JSON data
-      this.setState({
-        priceUSDWOZX: data.market_data.current_price.usd
-      });
-
-    }).catch(err => {
-        console.log(err)
-
+    var apiUrl = cons.mongo+'precio/usd/wozx';
+    const response = await fetch(proxyUrl+apiUrl)
+    .catch(error =>{console.error(error)})
+    const json = await response.json();
+    //console.log(json);
+    this.setState({
+      priceUSDWOZX: json.data.wozx.usd
     });
+
+    return json.data.wozx.usd;
 
   };
 
@@ -238,7 +235,7 @@ export default class WozxInvestor extends Component {
       withdrawnTrx: usuario.withdrawnTrx,
       investedWozx: usuario.investedWozx,
       withdrawnWozx: usuario.withdrawnWozx,
-      refe: usuario.nivel,
+      refe: usuario.niveles,
       rango: range,
       ganancia: prof,
       miPrecioWozx: investedWozx*priceUSDWOZX
@@ -371,6 +368,8 @@ export default class WozxInvestor extends Component {
     balanceTrx = parseFloat(balanceTrx);
     balanceTrx = balanceTrx.toFixed(2);
 
+    //console.log(this.state.refe);
+
     return (
 
       <div id="officer" className="container">
@@ -387,16 +386,16 @@ export default class WozxInvestor extends Component {
 
           </span></h3><br />
           <ul className="stats-tabs">
-            <li><a href="#officer">{this.state.refe[0]} <em>Level 1</em></a></li>
-            <li><a href="#officer">{this.state.refe[1]} <em>Level 2</em></a></li>
-            <li><a href="#officer">{this.state.refe[2]} <em>Level 3</em></a></li>
-            <li><a href="#officer">{this.state.refe[3]} <em>Level 4</em></a></li>
-            <li><a href="#officer">{this.state.refe[4]} <em>Level 5</em></a></li>
-            <li><a href="#officer">{this.state.refe[5]} <em>Level 6</em></a></li>
-            <li><a href="#officer">{this.state.refe[6]} <em>Level 7</em></a></li>
-            <li><a href="#officer">{this.state.refe[7]} <em>Level 8</em></a></li>
-            <li><a href="#officer">{this.state.refe[8]} <em>Level 9</em></a></li>
-            <li><a href="#officer">{this.state.refe[9]} <em>Level 10</em></a></li>
+            <li><a href="#officer">{this.state.refe[0].length} <em>Level 1</em></a></li>
+            <li><a href="#officer">{this.state.refe[1].length} <em>Level 2</em></a></li>
+            <li><a href="#officer">{this.state.refe[2].length} <em>Level 3</em></a></li>
+            <li><a href="#officer">{this.state.refe[3].length} <em>Level 4</em></a></li>
+            <li><a href="#officer">{this.state.refe[4].length} <em>Level 5</em></a></li>
+            <li><a href="#officer">{this.state.refe[5].length} <em>Level 6</em></a></li>
+            <li><a href="#officer">{this.state.refe[6].length} <em>Level 7</em></a></li>
+            <li><a href="#officer">{this.state.refe[7].length} <em>Level 8</em></a></li>
+            <li><a href="#officer">{this.state.refe[8].length} <em>Level 9</em></a></li>
+            <li><a href="#officer">{this.state.refe[9].length} <em>Level 10</em></a></li>
           </ul>
 
           <h3 className="white" style={{'fontWeight': 'bold'}}>Referral link:</h3>

@@ -1,6 +1,7 @@
 const express = require('express')
 const bodyParser = require("body-parser");
 const mongoose = require('mongoose');
+const CoinGecko = require('coingecko-api');
 var TronWeb = require('tronweb');
 
 const app = express();
@@ -8,13 +9,18 @@ const port = process.env.PORT || 3003;
 const token = process.env.APP_MT;
 const uri = process.env.APP_URI || "mongodb+srv://userwozx:wozx1234567890@ewozx.neief.mongodb.net/registro";
 const TRONGRID_API = process.env.APP_API || "https://api.shasta.trongrid.io";
+const proxy = process.env.APP_PROXY || "https://proxy-wozx.herokuapp.com/";
+const prykey = process.env.APP_PRYKEY;
 
 console.log(TRONGRID_API);
+
+const CoinGeckoClient = new CoinGecko();
 
 TronWeb = new TronWeb(
   TRONGRID_API,
   TRONGRID_API,
-  TRONGRID_API
+  TRONGRID_API,
+  prykey
 );
 
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -35,7 +41,7 @@ var user = mongoose.model('usuarios', {
         eth: Boolean,
         rango: Number,
         recompensa: Boolean,
-        nivel: [Number],
+        niveles: [[String]],
         balanceTrx: Number,
         withdrawnTrx: Number,
         investedWozx: Number,
@@ -79,6 +85,30 @@ app.get('/', async(req,res) => {
 
 });
 
+app.get('/precio/usd/trx', async(req,res) => {
+
+  let data = await CoinGeckoClient.simple.price({
+      ids: ['tron'],
+      vs_currencies: ['usd']
+  });
+  //console.log(data);
+
+  res.send(data)
+
+});
+
+app.get('/precio/usd/wozx', async(req,res) => {
+
+  let data = await CoinGeckoClient.simple.price({
+      ids: ['wozx'],
+      vs_currencies: ['usd']
+  });
+  //console.log(data);
+
+  res.send(data)
+
+});
+
 
 app.get('/consultar/todos', async(req,res) => {
 
@@ -93,10 +123,10 @@ app.get('/consultar/todos', async(req,res) => {
 app.get('/consultar/ejemplo', async(req,res) => {
 
     usuario = await user.find({ direccion: usuariobuscado }, function (err, docs) {});
+    usuario = usuario[0];
+    //console.log(usuario);
 
-    console.log(usuario);
-
-    res.send(usuario[0]);
+    res.send(usuario);
 
 });
 
@@ -106,7 +136,7 @@ app.get('/consultar/transaccion/:id', async(req,res) => {
 
     await TronWeb.trx.getTransaction(id)
     .then(value=>{
-      console.log(value.ret[0].contractRet);
+    //  console.log(value.ret[0].contractRet);
 
       if (value.ret[0].contractRet === 'SUCCESS') {
 
@@ -190,7 +220,7 @@ app.get('/consultar/:direccion', async(req,res) => {
            eth: false,
            rango: 0,
            recompensa: false,
-           nivel: [0,0,0,0,0,0,0,0,0,0],
+           niveles: [[],[],[],[],[],[],[],[],[],[]],
            balanceTrx: 0,
            withdrawnTrx: 0,
            investedWozx: 0,
@@ -246,7 +276,7 @@ app.post('/registrar/:direccion', async(req,res) => {
                 eth: false,
                 rango: 0,
                 recompensa: false,
-                nivel: [0,0,0,0,0,0,0,0,0,0],
+                niveles: [[],[],[],[],[],[],[],[],[],[]],
                 balanceTrx: 0,
                 withdrawnTrx: 0,
                 investedWozx: 0,
@@ -294,5 +324,108 @@ app.post('/actualizar/:direccion', async(req,res) => {
     }
 
 });
+
+
+app.post('/referidos/', async(req,res) => {
+
+    let token2 = req.body.token;
+    let datos = req.body.datos;
+
+    //datos = JSON.parse(datos);//use whit postman
+    console.log(datos);
+
+    if ( token == token2 ) {
+
+    var usuario = await user.find({ direccion: datos.direccion }, function (err, docs) {});
+    usuario = usuario[0];
+    delete usuario._id;
+    //console.log(usuario);
+    //console.log(usuario.direccion);
+
+    var sponsor = await user.find({ direccion: usuario.sponsor }, function (err, docs) {});
+    sponsor = sponsor[0];
+    delete sponsor._id;
+    console.log(sponsor);
+    //console.log(sponsor.direccion);
+
+    var done = 0;
+    var trx = 0;
+
+    console.log(datos.recompensa.length);
+
+    if ( TronWeb.isAddress(usuario.sponsor) && sponsor.registered) {
+
+      for (var i = 0; i < datos.recompensa.length; i++) {
+
+        if (sponsor.registered && sponsor.recompensa ) {
+
+          //console.log(sponsor.direccion);
+
+          sponsor.balanceTrx += datos.monto*datos.recompensa[i];
+
+          const found = undefined;
+
+          var aumentar = await sponsor.niveles[i].find(element => element == usuario.direccion);
+
+          //console.log(found);
+          //console.log(aumentar);
+
+          if ( aumentar == found ) {
+            done++;
+            sponsor.niveles[i].push(usuario.direccion);
+          }
+
+          //console.log(sponsor.niveles[i]);
+
+          var rango = datos.usd*datos.monto*datos.recompensa[i];
+          rango = rango.toFixed(2);
+          rango = parseFloat(rango);
+
+          var valor = datos.monto*datos.recompensa[i];
+          trx += valor;
+
+          var contractApp = await TronWeb.contract().at(datos.contractAddress);
+          var id2 = await contractApp.depositoTronUsuario(sponsor.direccion, parseInt(valor*1000000)).send();
+
+          sponsor.rango += rango;
+          sponsor.historial.push({
+              tiempo: Date.now(),
+              valor: valor,
+              moneda: 'TRX',
+              accion: 'Redward Referer -> $ '+rango+' USD',
+              link: id2
+
+          })
+
+          var updateUsuario = await user.updateOne({ direccion: sponsor.direccion }, sponsor);
+
+        }
+
+        if ( sponsor.direccion === sponsor.sponsor || sponsor == "" ) {
+          break;
+        }
+        //console.log(sponsor.sponsor);
+
+        sponsor = await user.find({ direccion: sponsor.sponsor }, function (err, docs) {});
+        sponsor = sponsor[0];
+        delete sponsor._id;
+        //console.log(sponsor);
+
+      }
+    }
+
+
+      //res.send({"New-Upline": done, "usuario": usuario});
+      res.send({"New-Upline": done, "trx-distributed": trx});
+
+    }else{
+      res.send("No autorizado");
+
+    }
+
+});
+
+
+
 
 app.listen(port, ()=> console.log('Escuchando Puerto: ' + port))

@@ -46,7 +46,7 @@ const tronApp = new TronWeb2(
   pry
 );
 
-export default class WozxInvestor extends Component {
+export default class CrowdFunding extends Component {
   constructor(props) {
     super(props);
 
@@ -128,15 +128,13 @@ export default class WozxInvestor extends Component {
 
   async rateT(){
     var proxyUrl = cons.proxy;
-    var apiUrl = 'https://api.coingecko.com/api/v3/coins/tron';
+    var apiUrl = cons.mongo+'precio/usd/trx';
     const response = await fetch(proxyUrl+apiUrl)
     .catch(error =>{console.error(error)})
     const json = await response.json();
-    console.log(json.market_data.current_price.usd);
-    this.setState({
-      priceUSDTRON: json.market_data.current_price.usd
-    });
-    return json.market_data.current_price.usd;
+    //console.log(json);
+
+    return json.data.tron.usd;
 
 
   };
@@ -320,13 +318,12 @@ export default class WozxInvestor extends Component {
     consulta = consulta['info'].closing_price;
 
     var precio = parseFloat(consulta);
-    console.log(precio); //precio en KRW
-
+    //console.log(precio); //precio en KRW
 
     ratetrx = precio-precio*tantoTrx;
     ratetrx = parseFloat(ratetrx.toFixed(2));
 
-    console.log(ratetrx);
+    //console.log(ratetrx);
 
     return ratetrx;
 
@@ -377,7 +374,7 @@ export default class WozxInvestor extends Component {
     investor.wozxEntrante = parseInt(investor.wozxEntrante._hex)/1000000;
     investor.wozxDisponible = parseInt(investor.wozxDisponible._hex)/1000000;
     investor.wozxRetirado = parseInt(investor.wozxRetirado._hex)/1000000;
-    console.log(investor);
+    //console.log(investor);
 
     if (walletApp > cons.MA){
 
@@ -407,7 +404,16 @@ export default class WozxInvestor extends Component {
         if (result) {
 
           if (amountTrx >= depomin && amountTrx <= balanceInTRX-cons.CE) {
-            this.deposit();
+
+            informacionCuenta.registered = investor.registered;
+            informacionCuenta.balanceTrx = investor.tronDisponible;
+            informacionCuenta.investedWozx = investor.wozxDisponible;
+            informacionCuenta.withdrawnTrx = investor.tronEntrante-investor.tronDisponible;
+            informacionCuenta.withdrawnWozx = investor.wozxEntrante-investor.wozxDisponible;
+
+            await this.actualizarUsuario( informacionCuenta, null );
+
+            this.deposit(amountTrx);
           }
 
         }else{
@@ -498,7 +504,7 @@ export default class WozxInvestor extends Component {
               this.setState({
                 texto:"Registration completed"
               });
-              delay(2000);
+              await delay(1000);
                var t = 3;
               setInterval(() => {
                 this.setState({
@@ -589,9 +595,9 @@ export default class WozxInvestor extends Component {
   }
 
 
-  async deposit() {
+  async deposit(amountTrx) {
 
-    let amount = document.getElementById("amount").value;
+    let amount = amountTrx;
 
     this.setState({
       texto:"Reciving TRON"
@@ -632,10 +638,16 @@ export default class WozxInvestor extends Component {
         texto:"Deposit is done!"
       });
 
+      await delay(3000);
+
+      this.setState({
+        texto:"Deposit TRX"
+      });
+
     }else{
 
       this.setState({
-        texto:"Canceled for User"
+        texto:"Failed!"
       });
     }
 
