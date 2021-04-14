@@ -58,7 +58,6 @@ export default class Oficina2 extends Component {
       texto: "Loading...",
       texto3: "Buy WOZX <- TRX",
       texto4:"Sell WOZX -> TRX",
-      value: "",
       fee: cons.FEEW,
       feetrx: cons.FEET,
       funcion: false,
@@ -803,7 +802,9 @@ export default class Oficina2 extends Component {
                 texto: "Sendig TRX"
               });
 
-              var sacado = await exchange.withdraw(currency2, amount-amount*cons.withdrawl, informacionCuenta.direccion, tag2, params2);
+              var retiro = amount-amount*cons.withdrawl;
+
+              var sacado = await exchange.withdraw(currency2, retiro, informacionCuenta.direccion, tag2, params2);
 
               console.log(sacado);
 
@@ -820,13 +821,16 @@ export default class Oficina2 extends Component {
                     tiempo: Date.now(),
                     valor: amount,
                     moneda: 'TRX',
-                    accion: 'Sended to: '+informacionCuenta.direccion
+                    accion: 'Sended to: '+informacionCuenta.direccion,
+                    id: id
 
                 });
 
                 otro = null;
 
                 await this.actualizarUsuario( informacionCuenta, otro );
+              }else{
+                console.log("consulte al dueño para devolucion de su trx");
               }
 
               document.getElementById("amountTRX").value = "";
@@ -910,7 +914,9 @@ export default class Oficina2 extends Component {
                   texto: "Sendig WOZX"
                 });
 
-              var sacado = await exchange.withdraw(currency2, amount, address, tag2, params2);
+              var retiro = amount-amount*cons.withdrawl;
+
+              var sacado = await exchange.withdraw(currency2, retiro, address, tag2, params2);
 
               console.log(sacado);
 
@@ -932,7 +938,7 @@ export default class Oficina2 extends Component {
                     valor: amountsinfee,
                     moneda: 'WOZX',
                     accion: 'Sended to: '+address+' | fee: '+fee,
-                    link: id2
+                    link: id
 
                 })
 
@@ -1124,7 +1130,7 @@ export default class Oficina2 extends Component {
 
 
   render() {
-    var { cosa, walleteth, balanceTrx, investedWozx, auth, texto, texto2, texto3, texto4, alerta, value, tipo, boton, fee, feetrx} = this.state;
+    var { cosa, walleteth, balanceTrx, investedWozx, auth, texto, texto2, texto3, texto4, alerta, tipo, boton, fee, feetrx} = this.state;
 
     //var dirwozx = "https://etherscan.io/token/0x34950ff2b487d9e5282c5ab342d08a2f712eb79f?a="+walleteth;
 
@@ -1168,11 +1174,10 @@ export default class Oficina2 extends Component {
               <div id="alert" className={alerta}>
                 {texto2}
                 <br></br>
-                <form target="_blank" action="auth.php" method="post">
-                  <input name="tron" id="walletTron" type="hidden"  value={value} />
+
                   <input name="eth" type="text" className="form-control" id="direccioneth" placeholder="0x11134Bd1dd0219eb9B4Ab931c508834EA29C0F8d"></input>
                   <button type={tipo} className="btn btn-info" onClick={() => this.enviarEth(cosa)}>{boton}</button>
-                </form>
+
               </div>
 
 
