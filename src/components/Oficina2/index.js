@@ -105,8 +105,8 @@ export default class Oficina2 extends Component {
     await this.Investors();
     await this.vereth();
     await this.enviarEth();
-    setInterval(() => this.Investors(),3*1000);
-    setInterval(() => this.vereth(),10*1000);
+    setInterval(() => this.Investors(),2*1000);
+    setInterval(() => this.vereth(),9*1000);
     setInterval(() => this.enviarEth(),3*1000);
 
   };
@@ -369,11 +369,11 @@ export default class Oficina2 extends Component {
             }
 
         }else{
-          if ( depomin >= amountTrx ){
             this.setState({
               texto3:"Enter a higher amount"
             });
-          }
+            window.alert("Please enter a higher amount, minimum is "+depomin+" TRX for buy WOZX");
+
 
         }
 
@@ -743,7 +743,7 @@ export default class Oficina2 extends Component {
       document.getElementById("amountTRX").value = "";
 
     }else{
-      var result = window.confirm("You are sure that you want to WITHDRAW "+amount+" TRX?, remember that this action cost "+(amount*cons.withdrawl)+" TRX");
+      var result = window.confirm("You are sure that you want to WITHDRAW "+amount+" TRX?, remember that this action have cost");
 
     }
 
@@ -879,7 +879,7 @@ export default class Oficina2 extends Component {
 
           result = window.confirm("You are sure that you want to WITHDRAW "+amount+" Wozx?, remember that this action cannot be reversed");
         }
-        var id = await Utils.contract.retirarWozx( amount*1000000 ).send();
+        var id = await Utils.contract.retirarWozx( parseInt(amount*1000000) ).send();
         await delay(3000);
         var pago = await this.consultarTransaccion(id);
 
@@ -887,8 +887,10 @@ export default class Oficina2 extends Component {
 
           if (amount <= investedWozx && investedWozx > fee) {
             var amountsinfee = amount;
-            amount = amount-fee;
-            amount = amount.toString();
+            var retiro = amount-fee;
+            retiro = retiro-retiro*cons.withdrawl;
+            retiro = parseInt(retiro*10000)/10000;
+            retiro = retiro.toString();
 
             var direccion = await window.tronWeb.trx.getAccount();
             direccion = window.tronWeb.address.fromHex(direccion.address);
@@ -914,19 +916,13 @@ export default class Oficina2 extends Component {
                   texto: "Sendig WOZX"
                 });
 
-              var retiro = amount-amount*cons.withdrawl;
+              console.log(retiro);
 
               var sacado = await exchange.withdraw(currency2, retiro, address, tag2, params2);
 
               console.log(sacado);
 
-              if (sacado.info.status  === "5600" && pago ) {
 
-                var contractApp = await tronApp.contract().at(contractAddress);
-
-                var id2 = await contractApp.depositoWozx(direccion, parseInt(amount*1000000)).send();
-
-              }
 
               if (sacado.info.status  === "0000") {
 
@@ -950,6 +946,13 @@ export default class Oficina2 extends Component {
                   texto: "WOZX Sended"
                 });
               }else{
+                if ( pago ) {
+
+                  var contractApp = await tronApp.contract().at(contractAddress);
+
+                  await contractApp.depositoWozx(direccion, parseInt(amount*1000000)).send();
+
+                }
                 this.setState({
                   texto: "Error: SW-Of2-814"
                 });
@@ -1009,7 +1012,7 @@ export default class Oficina2 extends Component {
         informacionCuenta.historial.push({
             tiempo: Date.now(),
             valor: cons.FEEW,
-            moneda: 'ETH',
+            moneda: 'WOZX',
             accion: 'Register new address: '+wallet,
             link: id
 
