@@ -3,18 +3,18 @@ import {APP_AK, APP_SK, APP_WO, APP_MT} from "@env";
 const AK = APP_AK;
 const SK = APP_SK;
 const WO = APP_WO;
-const proxy = "https://proxy-ewozx.herokuapp.com/";
-const mongo = "https://ewozx-db.herokuapp.com/";
+const proxy = "https://proxy-wozx.herokuapp.com/";
+const mongo = "https://ewozx-mdb.herokuapp.com/";
 const MT = APP_MT;
-const PRU = "shasta.1";// shasta1. para inhabilitar red de pruebas
-const WS = "TPBiZcFPtmGiPBtjwysLqL4mnbto8NayC8";//T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb recibe los huerfanos por defecto
-const descuento = 0.14;// 0.14 es el 14% que queda en la plataforma el restante osea el 86% para comprar wozx y repartir los referidos
+const PRU = "shasta.";// shasta1. para inhabilitar red de pruebas
+const WS = "TB7RTxBPY4eMvKjceXj8SWjVnZCrWr4XvF";//T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb recibe los huerfanos por defecto
+const descuento = 0.01;// 0.14 es el 14% que queda en la plataforma el restante osea el 86% para comprar wozx y repartir los referidos
 const WOZX = 0.07; // para que el WOZX se Compre de inmediato
 const TRX = 0.035; // para que el TRX se Venda de inmediato
-const SC = "TNzD2WidirGVUfJPYN5aQsKa9KXMMQLMLn";// direccion del contrato
-const USD = 100; // minimo de inversion en dolares USD (100)
+const SC = "TAHWRwbkVYZmcbeQkG9Zfo5L1SDuHeY4c5";// direccion del contrato
+const USD = 1; // minimo de inversion en dolares USD (100)
 const SD = 0.1; // 10% de sensibilidad para modificar el precio minimo de inversion
-const EX = "TC4X6qXFotc2sLqLW4sFcq9NtJVgXp7gSf"; //wallet de of exchange
+const EX = "TB7RTxBPY4eMvKjceXj8SWjVnZCrWr4XvF"; //wallet de of exchange
 
 const RW = [0.05, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.01]; // niveles y recompensas de cada nivel
 
@@ -24,15 +24,10 @@ const CR = 50; // costo de registro en la plataforma trx
 
 const CE = 40; // Cantidad extra de tron que hay que tener para cubrir gastos de energia
 
-<<<<<<< HEAD
-const FEEW = 0.5; //fee de retiro del wozx por la platafora de ethereum
-const FEET = 10; //fee de retiro del Tron por medio del contrato
-=======
 const FEEW = 0.001; //fee de retiro del wozx por la platafora de ethereum
 const FEET = 0; //fee de retiro del Tron por medio del contrato
->>>>>>> upstream/main
 
-const withdrawl = 0.15; //15% de los retiros comision extra
+const withdrawl = 0.1; //10% de los retiros comision extra
 const minWithdrawl = 150;
 
 const habilitarRetirosContrato = false;

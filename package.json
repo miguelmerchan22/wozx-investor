@@ -19,11 +19,7 @@
   "bugs": {
     "url": ""
   },
-<<<<<<< HEAD
   "homepage": "https://ewozx.com/",
-=======
-  "homepage": "https://stevenstc.github.io/",
->>>>>>> upstream/main
   "dependencies": {
     "@babel/core": "7.8.4",
     "@svgr/webpack": "4.3.3",
