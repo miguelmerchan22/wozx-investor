@@ -1,6 +1,6 @@
 {
-  "name": "Ewozx",
-  "version": "0.7.77",
+  "name": "ewozx",
+  "version": "1.0.0",
   "description": "Es la aplicacion para comprar la criptomoneda WOZX por medio de la Blockchain TRON",
   "directories": {
     "test": "test"
@@ -15,9 +15,9 @@
     "url": ""
   },
   "author": "miguel merchan",
-  "license": "Apache 2.0",
+  "license": "Apache-2.0",
   "bugs": {
-    "url": ""
+    "url": "https://github.com/miguelmerchan22/Ewozx-investor"
   },
   "homepage": "https://ewozx.com/",
   "dependencies": {
@@ -71,7 +71,7 @@
     "optimize-css-assets-webpack-plugin": "5.0.3",
     "pnp-webpack-plugin": "1.6.0",
     "popper.js": "^1.16.1",
-    "postcss": "^8.1.4",
+    "postcss": "^8.3.5",
     "postcss-flexbugs-fixes": "4.1.0",
     "postcss-loader": "3.0.0",
     "postcss-normalize": "8.0.1",
